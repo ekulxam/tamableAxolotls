@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.ramgames.tamableaxolotls.mixins",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "AxolotlEntityMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

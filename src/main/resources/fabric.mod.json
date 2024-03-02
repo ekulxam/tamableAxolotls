@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "tamableaxolotls",
+  "version": "${version}",
+  "name": "tamableAxolotls",
+  "description": "A simple mod that allows the axolotls to be tamed! Commissioned by Nullable",
+  "authors": [
+    "RamGames"
+  ],
+  "contact": {
+    "repo": "https://github.com/RamGemes/tamableAxolotls"
+  },
+  "license": "MIT",
+  "icon": "assets/tamableaxolotls/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "net.ramgames.tamableaxolotls.TamableAxolotls"
+    ]
+  },
+  "mixins": [
+    "tamableaxolotls.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric": "*",
+    "minecraft": "<=1.20.2"
+  }
+}
