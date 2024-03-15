@@ -4,10 +4,10 @@ import net.minecraft.entity.LivingEntity;
 
 public interface AxolotlEntityAccess {
 
-    LivingEntity tamableAxolotls$getOwner();
+    LivingEntity getOwner();
 
-    boolean tamableAxolotls$isSitting();
+    boolean isSitting();
 
-    boolean tamableAxolotls$isTamed();
-    boolean tamableAxolotls$canAttackWithOwner(LivingEntity target, LivingEntity owner);
+    boolean isTamed();
+    boolean canAttackWithOwner(LivingEntity target, LivingEntity owner);
 }

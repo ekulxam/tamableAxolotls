@@ -8,7 +8,6 @@ import net.minecraft.entity.ai.pathing.*;
 import net.minecraft.entity.passive.AxolotlEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldView;
-import net.ramgames.tamableaxolotls.AxolotlEntityAccess;
 
 import java.util.EnumSet;
 
@@ -36,7 +35,7 @@ public class AxolotlFollowOwnerGoal extends Goal {
     }
 
     public boolean canStart() {
-        LivingEntity livingEntity = ((AxolotlEntityAccess) this.tameable).tamableAxolotls$getOwner();
+        LivingEntity livingEntity = ((AxolotlEntityAccess) this.tameable).getOwner();
         if (livingEntity == null) {
             return false;
         } else if (livingEntity.isSpectator()) {

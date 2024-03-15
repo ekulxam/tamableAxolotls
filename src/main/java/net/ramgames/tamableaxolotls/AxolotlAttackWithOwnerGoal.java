@@ -19,14 +19,14 @@ public class AxolotlAttackWithOwnerGoal extends TrackTargetGoal {
     }
 
     public boolean canStart() {
-        if (((AxolotlEntityAccess)this.tameable).tamableAxolotls$isTamed()) {
-            LivingEntity livingEntity = ((AxolotlEntityAccess)this.tameable).tamableAxolotls$getOwner();
+        if (((AxolotlEntityAccess)this.tameable).isTamed()) {
+            LivingEntity livingEntity = ((AxolotlEntityAccess)this.tameable).getOwner();
             if (livingEntity == null) {
                 return false;
             } else {
                 this.attacking = livingEntity.getAttacking();
                 int i = livingEntity.getLastAttackTime();
-                return i != this.lastAttackTime && this.canTrack(this.attacking, TargetPredicate.DEFAULT) && ((AxolotlEntityAccess)this.tameable).tamableAxolotls$canAttackWithOwner(this.attacking, livingEntity);
+                return i != this.lastAttackTime && this.canTrack(this.attacking, TargetPredicate.DEFAULT) && ((AxolotlEntityAccess)this.tameable).canAttackWithOwner(this.attacking, livingEntity);
             }
         } else {
             return false;
@@ -35,7 +35,7 @@ public class AxolotlAttackWithOwnerGoal extends TrackTargetGoal {
 
     public void start() {
         this.mob.setTarget(this.attacking);
-        LivingEntity livingEntity = ((AxolotlEntityAccess)this.tameable).tamableAxolotls$getOwner();
+        LivingEntity livingEntity = ((AxolotlEntityAccess)this.tameable).getOwner();
         if (livingEntity != null) {
             this.lastAttackTime = livingEntity.getLastAttackTime();
         }
