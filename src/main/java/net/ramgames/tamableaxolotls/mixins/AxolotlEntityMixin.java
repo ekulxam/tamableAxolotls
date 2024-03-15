@@ -22,7 +22,6 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.scoreboard.AbstractTeam;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.server.ServerConfigHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -31,6 +30,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
+import net.ramgames.tamableaxolotls.AxolotlAttackWithOwnerGoal;
 import net.ramgames.tamableaxolotls.AxolotlEntityAccess;
 import net.ramgames.tamableaxolotls.AxolotlFollowOwnerGoal;
 import org.jetbrains.annotations.Nullable;
@@ -44,6 +44,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Optional;
 import java.util.UUID;
 
+@SuppressWarnings("WrongEntityDataParameterClass")
 @Mixin(value = AxolotlEntity.class, priority = 1001)
 public abstract class AxolotlEntityMixin extends AnimalEntity implements AxolotlEntityAccess {
     @Unique
@@ -72,7 +73,7 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
     }
 
     @Inject(method = "readCustomDataFromNbt", at = @At("TAIL"))
-    public void readCustomDataFromNbt(NbtCompound nbt, CallbackInfo ci) {
+    public void readNewCustomDataFromNbt(NbtCompound nbt, CallbackInfo ci) {
         UUID uUID;
         if (nbt.containsUuid("Owner")) {
             uUID = nbt.getUuid("Owner");
@@ -99,7 +100,11 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
 
     @Inject(method = "copyDataFromNbt", at = @At(value = "TAIL"))
     public void addOwnerToBucketDeploy(NbtCompound nbt, CallbackInfo ci) {
-        if(nbt.containsUuid("Owner")) setOwnerUuid(nbt.getUuid("Owner"));
+        if(nbt.containsUuid("Owner")) {
+            setOwnerUuid(nbt.getUuid("Owner"));
+            setTamed(true);
+        }
+        else setTamed(false);
     }
 
     public boolean canBeLeashedBy(PlayerEntity player) {
@@ -202,21 +207,26 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
         return true;
     }
 
+    @Override
+    public boolean cannotDespawn() {
+        return isTamed();
+    }
+
     @Unique
     public boolean isOwner(LivingEntity entity) {
         return entity == this.tamableAxolotls$getOwner();
     }
 
     @Override
-    public AbstractTeam getScoreboardTeam() {
+    public Team getScoreboardTeam() {
         if (this.isTamed()) {
             LivingEntity livingEntity = this.tamableAxolotls$getOwner();
             if (livingEntity != null) {
-                return livingEntity.getScoreboardTeam();
+                return (Team) livingEntity.getScoreboardTeam();
             }
         }
 
-        return super.getScoreboardTeam();
+        return (Team) super.getScoreboardTeam();
     }
 
     public boolean isTeammate(Entity other) {
@@ -267,25 +277,22 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
         Item item = itemStack.getItem();
         if (this.getWorld().isClient) {
             boolean bl = this.isOwner(player) || this.isTamed() || itemStack.isOf(Items.TROPICAL_FISH) && !this.isTamed();
-            return bl ? ActionResult.CONSUME : ActionResult.PASS;
+            return bl ? ActionResult.CONSUME : ActionResult.FAIL;
         } else {
             label90: {
                 if (this.isTamed()) {
-                    System.out.println("tamed!");
-                    if (Items.TROPICAL_FISH.equals(itemStack.getItem()) || this.getHealth() < this.getMaxHealth()) {
-                        System.out.println("holding item or not full health!");
-                        if (!player.getAbilities().creativeMode) {
-                            itemStack.decrement(1);
-                        }
+                    if (Items.TROPICAL_FISH.equals(itemStack.getItem()) && this.getHealth() < this.getMaxHealth()) {
+                        if (!player.getAbilities().creativeMode) itemStack.decrement(1);
                         if(this.getBreedingAge() == 0 && !this.isInLove()) {
-                            System.out.println("ready to breed...");
                             this.setLoveTicks(600);
                             this.getWorld().sendEntityStatus(this, (byte)18);
                             showEmoteParticle(true);
+                            return ActionResult.SUCCESS;
                         }
-                        else this.heal((float)item.getFoodComponent().getHunger());
-                        System.out.println("finished");
-                        return ActionResult.SUCCESS;
+                        else {
+                            this.heal((float) item.getFoodComponent().getHunger());
+                            return ActionResult.SUCCESS;
+                        }
                     }
 
                     if (!(item instanceof DyeItem)) {
@@ -297,39 +304,26 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
                     }
 
                 } else if (itemStack.isOf(Items.TROPICAL_FISH)) {
-                    if (!player.getAbilities().creativeMode) {
-                        itemStack.decrement(1);
-                    }
-
+                    if (!player.getAbilities().creativeMode) itemStack.decrement(1);
                     if (this.random.nextInt(3) == 0) {
                         this.setOwner(player);
                         this.navigation.stop();
                         this.setTarget(null);
                         this.setSitting(true);
                         this.getWorld().sendEntityStatus(this, (byte)7);
-                    } else {
-                        this.getWorld().sendEntityStatus(this, (byte)6);
-                    }
-
+                    } else this.getWorld().sendEntityStatus(this, (byte)6);
                     return ActionResult.SUCCESS;
                 }
 
                 return super.interactMob(player, hand);
-            }
-
-            ActionResult actionResult = super.interactMob(player, hand);
-            if ((!actionResult.isAccepted() || this.isBaby()) && this.isOwner(player)) {
-                this.setSitting(!this.isSitting());
-                this.navigation.stop();
-                this.setTarget(null);
-                return ActionResult.SUCCESS;
             }
         }
         return super.interactMob(player, hand);
     }
 
     protected void initGoals() {
-        this.goalSelector.add(12, new AxolotlFollowOwnerGoal((AxolotlEntity)(Object)this, 0.75, 24.0F, 2.0F, false));
+        this.goalSelector.add(12, new AxolotlFollowOwnerGoal((AxolotlEntity)(Object)this, 0.75, 10, 2, false));
+        this.goalSelector.add(18, new AxolotlAttackWithOwnerGoal((AxolotlEntity)(Object)this));
     }
 
     @Inject(method = "createChild", at = @At("TAIL"))

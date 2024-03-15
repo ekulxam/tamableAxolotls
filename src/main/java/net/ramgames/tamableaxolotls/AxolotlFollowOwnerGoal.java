@@ -13,10 +13,6 @@ import net.ramgames.tamableaxolotls.AxolotlEntityAccess;
 import java.util.EnumSet;
 
 public class AxolotlFollowOwnerGoal extends Goal {
-    public static final int TELEPORT_DISTANCE = 12;
-    private static final int HORIZONTAL_RANGE = 2;
-    private static final int HORIZONTAL_VARIATION = 3;
-    private static final int VERTICAL_VARIATION = 1;
     private final AxolotlEntity tameable;
     private LivingEntity owner;
     private final WorldView world;
@@ -66,7 +62,7 @@ public class AxolotlFollowOwnerGoal extends Goal {
     }
 
     public boolean cannotFollow() {
-        return ((AxolotlEntityAccess) this.tameable).isSitting() || this.tameable.hasVehicle() || this.tameable.isLeashed();
+        return this.tameable.hasVehicle() || this.tameable.isLeashed();
     }
 
     public void start() {

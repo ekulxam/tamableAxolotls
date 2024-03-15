@@ -4,6 +4,7 @@
   "package": "net.ramgames.tamableaxolotls.mixins",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
+    "AxolotlAttackablesSensorMixin",
     "AxolotlEntityMixin"
   ],
   "injectors": {
