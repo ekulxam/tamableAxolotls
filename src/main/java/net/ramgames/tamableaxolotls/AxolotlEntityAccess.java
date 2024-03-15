@@ -6,8 +6,8 @@ public interface AxolotlEntityAccess {
 
     LivingEntity tamableAxolotls$getOwner();
 
-    boolean isSitting();
+    boolean tamableAxolotls$isSitting();
 
-    boolean isTamed();
-    boolean canAttackWithOwner(LivingEntity target, LivingEntity owner);
+    boolean tamableAxolotls$isTamed();
+    boolean tamableAxolotls$canAttackWithOwner(LivingEntity target, LivingEntity owner);
 }

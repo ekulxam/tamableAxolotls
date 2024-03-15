@@ -2,10 +2,7 @@ package net.ramgames.tamableaxolotls.mixins;
 
 
 import net.minecraft.advancement.criterion.Criteria;
-import net.minecraft.entity.Bucketable;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.*;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
@@ -45,8 +42,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 @SuppressWarnings("WrongEntityDataParameterClass")
-@Mixin(value = AxolotlEntity.class, priority = 1001)
-public abstract class AxolotlEntityMixin extends AnimalEntity implements AxolotlEntityAccess {
+@Mixin(value = AxolotlEntity.class, priority = 1500)
+public abstract class AxolotlEntityMixin extends AnimalEntity implements AxolotlEntityAccess, Tameable {
     @Unique
     private static final TrackedData<Byte> TAMEABLE_FLAGS = DataTracker.registerData(AxolotlEntity.class, TrackedDataHandlerRegistry.BYTE);
     @Unique
@@ -58,11 +55,13 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
         super(entityType, world);
         this.onTamedChanged();
     }
+
     @Inject(method = "initDataTracker", at = @At("TAIL"))
     protected void initDataTracker(CallbackInfo ci) {
         this.dataTracker.startTracking(TAMEABLE_FLAGS, (byte)0);
         this.dataTracker.startTracking(OWNER_UUID, Optional.empty());
     }
+
     @Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
     public void writeCustomDataToNbt(NbtCompound nbt, CallbackInfo ci) {
         if (this.getOwnerUuid() != null) {
@@ -138,12 +137,10 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
 
     }
     @SuppressWarnings("AddedMixinMembersNamePattern")
-    @Unique
-    public boolean isTamed() {
+    public boolean tamableAxolotls$isTamed() {
         return (this.dataTracker.get(TAMEABLE_FLAGS) & 4) != 0;
     }
 
-    @Unique
     public void setTamed(boolean tamed) {
         byte b = this.dataTracker.get(TAMEABLE_FLAGS);
         if (tamed) {
@@ -151,22 +148,14 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
         } else {
             this.dataTracker.set(TAMEABLE_FLAGS, (byte)(b & -5));
         }
-
-        this.onTamedChanged();
     }
 
-    @Unique
-    protected void onTamedChanged() {
-    }
-
-    @Unique
     public boolean isInSittingPose() {
         return ((Byte)this.dataTracker.get(TAMEABLE_FLAGS) & 1) != 0;
     }
 
-    @Unique
     public void setInSittingPose(boolean inSittingPose) {
-        byte b = (Byte)this.dataTracker.get(TAMEABLE_FLAGS);
+        byte b = (Byte) this.dataTracker.get(TAMEABLE_FLAGS);
         if (inSittingPose) {
             this.dataTracker.set(TAMEABLE_FLAGS, (byte)(b | 1));
         } else {
@@ -175,10 +164,9 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
 
     }
 
-    @Unique
     @Nullable
     public UUID getOwnerUuid() {
-        return (UUID)((Optional)this.dataTracker.get(OWNER_UUID)).orElse(null);
+        return this.dataTracker.get(OWNER_UUID).orElse(null);
     }
 
     @Unique
@@ -202,14 +190,15 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
 
     @SuppressWarnings("AddedMixinMembersNamePattern")
     @Unique
-    public boolean canAttackWithOwner(LivingEntity target, LivingEntity owner) {
+    public boolean tamableAxolotls$canAttackWithOwner(LivingEntity target, LivingEntity owner) {
         if(target instanceof TameableEntity tameable) return tameable.getOwner() != owner;
         return true;
     }
 
     @Override
     public boolean cannotDespawn() {
-        return isTamed();
+
+        return super.cannotDespawn() || tamableAxolotls$isTamed();
     }
 
     @Unique
@@ -219,7 +208,7 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
 
     @Override
     public Team getScoreboardTeam() {
-        if (this.isTamed()) {
+        if (this.tamableAxolotls$isTamed()) {
             LivingEntity livingEntity = this.tamableAxolotls$getOwner();
             if (livingEntity != null) {
                 return (Team) livingEntity.getScoreboardTeam();
@@ -230,7 +219,7 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
     }
 
     public boolean isTeammate(Entity other) {
-        if (this.isTamed()) {
+        if (this.tamableAxolotls$isTamed()) {
             LivingEntity livingEntity = this.tamableAxolotls$getOwner();
             if (other == livingEntity) {
                 return true;
@@ -246,23 +235,20 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
 
     public void onDeath(DamageSource damageSource) {
         if (!this.getWorld().isClient && this.getWorld().getGameRules().getBoolean(GameRules.SHOW_DEATH_MESSAGES) && this.tamableAxolotls$getOwner() instanceof ServerPlayerEntity) {
+            // can't produce NullPointerException because the instanceof check returns false if it's null
             this.tamableAxolotls$getOwner().sendMessage(this.getDamageTracker().getDeathMessage());
         }
-
         super.onDeath(damageSource);
     }
 
     @SuppressWarnings("AddedMixinMembersNamePattern")
-    @Unique
-    public boolean isSitting() {
+    public boolean tamableAxolotls$isSitting() {
         return this.sitting;
     }
 
-    @Unique
     public void setSitting(boolean sitting) {
         this.sitting = sitting;
     }
-
 
     public @Nullable LivingEntity tamableAxolotls$getOwner() {
         UUID uUID = this.getOwnerUuid();
@@ -276,11 +262,11 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
         ItemStack itemStack = player.getStackInHand(hand);
         Item item = itemStack.getItem();
         if (this.getWorld().isClient) {
-            boolean bl = this.isOwner(player) || this.isTamed() || itemStack.isOf(Items.TROPICAL_FISH) && !this.isTamed();
+            boolean bl = this.isOwner(player) || this.tamableAxolotls$isTamed() || itemStack.isOf(Items.TROPICAL_FISH) && !this.tamableAxolotls$isTamed();
             return bl ? ActionResult.CONSUME : ActionResult.FAIL;
         } else {
             label90: {
-                if (this.isTamed()) {
+                if (this.tamableAxolotls$isTamed()) {
                     if (Items.TROPICAL_FISH.equals(itemStack.getItem()) && this.getHealth() < this.getMaxHealth()) {
                         if (!player.getAbilities().creativeMode) itemStack.decrement(1);
                         if(this.getBreedingAge() == 0 && !this.isInLove()) {
@@ -329,6 +315,6 @@ public abstract class AxolotlEntityMixin extends AnimalEntity implements Axolotl
     @Inject(method = "createChild", at = @At("TAIL"))
     private void addOwnerTagToChild(ServerWorld world, PassiveEntity entity, CallbackInfoReturnable<PassiveEntity> cir) {
         PassiveEntity child = cir.getReturnValue();
-        if(isTamed()) ((AxolotlEntityMixin) child).setOwnerUuid(getOwnerUuid());
+        if(tamableAxolotls$isTamed()) ((AxolotlEntityMixin) child).setOwnerUuid(getOwnerUuid());
     }
 }

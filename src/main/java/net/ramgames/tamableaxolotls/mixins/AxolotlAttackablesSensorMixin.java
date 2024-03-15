@@ -1,7 +1,6 @@
 package net.ramgames.tamableaxolotls.mixins;
 
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.brain.MemoryModuleType;
 import net.minecraft.entity.ai.brain.sensor.AxolotlAttackablesSensor;
 import net.minecraft.entity.passive.AxolotlEntity;
 import net.ramgames.tamableaxolotls.AxolotlEntityAccess;
@@ -16,11 +15,11 @@ public class AxolotlAttackablesSensorMixin {
 
     @Inject(method = "canHunt", at = @At(value = "RETURN"), cancellable = true)
     public void allowAttackingAll(LivingEntity entity, LivingEntity target, CallbackInfoReturnable<Boolean> cir) {
-        if(entity instanceof AxolotlEntity axolotl && ((AxolotlEntityAccess) axolotl).isTamed()) cir.setReturnValue(((AxolotlEntityAccess)axolotl).tamableAxolotls$getOwner().getAttacking() == target);
+        if(entity instanceof AxolotlEntity axolotl && ((AxolotlEntityAccess) axolotl).tamableAxolotls$isTamed()) cir.setReturnValue(((AxolotlEntityAccess)axolotl).tamableAxolotls$getOwner().getAttacking() == target);
     }
 
     @Inject(method = "isAlwaysHostileTo", at = @At("RETURN"), cancellable = true)
     public void removeConstantHostility(LivingEntity entity, CallbackInfoReturnable<Boolean> cir) {
-        if(entity instanceof AxolotlEntity axolotl && ((AxolotlEntityAccess) axolotl).isTamed()) cir.setReturnValue(false);
+        if(entity instanceof AxolotlEntity axolotl && ((AxolotlEntityAccess) axolotl).tamableAxolotls$isTamed()) cir.setReturnValue(false);
     }
 }

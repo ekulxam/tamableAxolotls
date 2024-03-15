@@ -4,7 +4,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.TargetPredicate;
 import net.minecraft.entity.ai.goal.TrackTargetGoal;
 import net.minecraft.entity.passive.AxolotlEntity;
-import net.minecraft.entity.passive.TameableEntity;
 
 import java.util.EnumSet;
 
@@ -20,14 +19,14 @@ public class AxolotlAttackWithOwnerGoal extends TrackTargetGoal {
     }
 
     public boolean canStart() {
-        if (((AxolotlEntityAccess)this.tameable).isTamed()) {
+        if (((AxolotlEntityAccess)this.tameable).tamableAxolotls$isTamed()) {
             LivingEntity livingEntity = ((AxolotlEntityAccess)this.tameable).tamableAxolotls$getOwner();
             if (livingEntity == null) {
                 return false;
             } else {
                 this.attacking = livingEntity.getAttacking();
                 int i = livingEntity.getLastAttackTime();
-                return i != this.lastAttackTime && this.canTrack(this.attacking, TargetPredicate.DEFAULT) && ((AxolotlEntityAccess)this.tameable).canAttackWithOwner(this.attacking, livingEntity);
+                return i != this.lastAttackTime && this.canTrack(this.attacking, TargetPredicate.DEFAULT) && ((AxolotlEntityAccess)this.tameable).tamableAxolotls$canAttackWithOwner(this.attacking, livingEntity);
             }
         } else {
             return false;
